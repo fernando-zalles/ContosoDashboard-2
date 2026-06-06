@@ -1,50 +1,55 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Version change: none -> 1.0.0
+Modified principles:
+- I. Training-First Transparency
+- II. Security by Design
+- III. Offline-First Architecture
+- IV. Specification-Led Development
+- V. Simplicity & Maintainability
+Added sections:
+- Training & Safety Constraints
+- Review & Delivery Process
+Templates requiring updates:
+- .specify/templates/plan-template.md ✅ reviewed
+- .specify/templates/spec-template.md ✅ reviewed
+- .specify/templates/tasks-template.md ✅ reviewed
+- .specify/templates/constitution-template.md ⚠ pending (template remains generic)
+Follow-up TODOs: none
+-->
+
+# ContosoDashboard Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Training-First Transparency
+The project MUST clearly declare its educational, training-only purpose. All features, security controls, and architectural decisions are validated as instructional examples rather than production-ready solutions.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Security by Design
+Security controls MUST be enforced at every layer, even in a training context: authentication, authorization, IDOR protection, and data isolation are non-negotiable. Changes MUST preserve mock security guarantees and not weaken authorization checks for convenience.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Offline-First Architecture
+The application MUST remain runnable without cloud dependencies while maintaining clear abstraction boundaries for future cloud migration. Infrastructure abstractions and dependency injection MUST enable swapping local training implementations for production services with minimal business logic changes.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Specification-Led Development
+All substantive work MUST be driven by written specifications, plans, and task artifacts. Requirements, user stories, and success criteria MUST be documented before implementation, and reviews MUST verify constitution compliance.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Simplicity & Maintainability
+Features MUST be kept small, readable, and maintainable; avoid unnecessary complexity, premature optimization, and over-engineered solutions. Code SHOULD favor clarity, explicit intent, and consistency with the existing Blazor Server / ASP.NET Core structure.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Training & Safety Constraints
+The repository is intended for instruction and offline training only. It MUST NOT be treated as a production-grade application, and any feature changes MUST preserve the distinction between mock training behavior and production requirements. External service integration, cloud dependencies, and production security controls are explicitly out of scope unless a clear migration path is documented.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Review & Delivery Process
+Every change MUST be supported by:
+- a written feature specification or task definition,
+- a lightweight review of design tradeoffs,
+- a validation step that verifies the change preserves training safety and security constraints.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Pull requests MUST include a short compliance summary referencing the relevant principles, and reviewers MUST confirm that the work does not violate offline training assumptions or mock authentication guarantees.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This constitution supersedes informal practices and governs all project decisions for ContosoDashboard. Amendments require written documentation, approval by the project owner or training lead, and an update to this constitution file. Changes that alter core principles, training scope, or security assumptions MUST be versioned and tracked explicitly.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+**Version**: 1.0.0 | **Ratified**: 2026-06-06 | **Last Amended**: 2026-06-06
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
