@@ -3,6 +3,8 @@ using ContosoDashboard.Data;
 using ContosoDashboard.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using System;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +16,32 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
 // Configure Database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine($"DefaultConnection: {defaultConnection}");
+
+// If running in Development and the configured DefaultConnection points to LocalDB,
+// prefer a local SQLite file for a smoother developer experience when LocalDB isn't available.
+var usesLocalDb = !string.IsNullOrWhiteSpace(defaultConnection) &&
+    defaultConnection.IndexOf("localdb", StringComparison.OrdinalIgnoreCase) >= 0;
+
+var useSqlServer = !string.IsNullOrWhiteSpace(defaultConnection) && !(builder.Environment.IsDevelopment() && usesLocalDb);
+
+if (useSqlServer)
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(defaultConnection));
+}
+else
+{
+    // Use a local SQLite file for development fallback
+    var dataDir = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+    Directory.CreateDirectory(dataDir);
+    var sqlitePath = Path.Combine(dataDir, "contosodashboard.db");
+
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite($"Data Source={sqlitePath}"));
+}
 
 // Configure Mock Authentication (Cookie-based for training purposes)
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
