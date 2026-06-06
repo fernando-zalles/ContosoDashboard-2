@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using ContosoDashboard.Data;
+using ContosoDashboard.Models;
 using ContosoDashboard.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Options;
 using System;
 using System.IO;
 
@@ -69,6 +71,10 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+builder.Services.AddSingleton<IDocumentValidationService, DocumentValidationService>();
+builder.Services.Configure<DocumentStorageOptions>(builder.Configuration.GetSection("DocumentStorage"));
 
 // Add HttpContextAccessor for accessing user claims
 builder.Services.AddHttpContextAccessor();
@@ -83,6 +89,29 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.EnsureCreated(); // For development - use migrations in production
+
+        if (app.Environment.IsDevelopment())
+        {
+            var connection = context.Database.GetDbConnection();
+            try
+            {
+                connection.Open();
+                using var command = connection.CreateCommand();
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Documents';";
+                var tableName = command.ExecuteScalar();
+
+                if (tableName == null)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogWarning("Documents table missing in the SQLite database. Repairing development database schema without deleting the file.");
+                    CreateMissingDocumentTables(context);
+                }
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
     }
     catch (Exception ex)
     {
@@ -133,5 +162,46 @@ app.UseAuthorization();
 
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+
+
+void CreateMissingDocumentTables(ApplicationDbContext context)
+{
+    context.Database.ExecuteSqlRaw(@"
+        CREATE TABLE IF NOT EXISTS Documents (
+            DocumentId INTEGER PRIMARY KEY AUTOINCREMENT,
+            Title TEXT NOT NULL,
+            Description TEXT,
+            Category TEXT NOT NULL,
+            Tags TEXT,
+            OriginalFileName TEXT NOT NULL,
+            ContentType TEXT NOT NULL,
+            StoragePath TEXT NOT NULL,
+            FileSizeBytes INTEGER NOT NULL,
+            UploadDateUtc TEXT NOT NULL,
+            UploadedById INTEGER NOT NULL,
+            ProjectId INTEGER NULL,
+            IsShared INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (UploadedById) REFERENCES Users(UserId) ON DELETE RESTRICT,
+            FOREIGN KEY (ProjectId) REFERENCES Projects(ProjectId) ON DELETE SET NULL
+        );
+        CREATE TABLE IF NOT EXISTS DocumentShares (
+            DocumentShareId INTEGER PRIMARY KEY AUTOINCREMENT,
+            DocumentId INTEGER NOT NULL,
+            RecipientUserId INTEGER NULL,
+            RecipientTeam TEXT,
+            SharedByUserId INTEGER NOT NULL,
+            SharedOnUtc TEXT NOT NULL,
+            FOREIGN KEY (DocumentId) REFERENCES Documents(DocumentId) ON DELETE CASCADE,
+            FOREIGN KEY (RecipientUserId) REFERENCES Users(UserId) ON DELETE RESTRICT,
+            FOREIGN KEY (SharedByUserId) REFERENCES Users(UserId) ON DELETE RESTRICT
+        );
+        CREATE INDEX IF NOT EXISTS IX_Documents_UploadedById ON Documents (UploadedById);
+        CREATE INDEX IF NOT EXISTS IX_Documents_ProjectId ON Documents (ProjectId);
+        CREATE INDEX IF NOT EXISTS IX_Documents_Category ON Documents (Category);
+        CREATE INDEX IF NOT EXISTS IX_DocumentShares_DocumentId ON DocumentShares (DocumentId);
+        CREATE INDEX IF NOT EXISTS IX_DocumentShares_RecipientUserId ON DocumentShares (RecipientUserId);
+        CREATE INDEX IF NOT EXISTS IX_DocumentShares_SharedByUserId ON DocumentShares (SharedByUserId);
+    ");
+}
 
 app.Run();

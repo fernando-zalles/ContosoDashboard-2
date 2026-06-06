@@ -1,0 +1,127 @@
+@page "/documents"
+@using ContosoDashboard.Models
+@using ContosoDashboard.Services
+@using System.Security.Claims
+@attribute [Authorize]
+
+@inject IDocumentService DocumentService
+@inject IProjectService ProjectService
+@inject IDocumentValidationService ValidationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>My Documents</PageTitle>
+
+<DocumentLayout Title="My Documents">
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Search</label>
+            <InputText class="form-control" @bind-Value="query.SearchText" @bind-Value:event="oninput" />
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Category</label>
+            <InputSelect class="form-select" @bind-Value="query.Category">
+                <option value="">All categories</option>
+                @foreach (var category in categories)
+                {
+                    <option value="@category">@category</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Project</label>
+            <InputSelect class="form-select" @bind-Value="query.ProjectId">
+                <option value="">All projects</option>
+                @foreach (var project in userProjects)
+                {
+                    <option value="@project.ProjectId">@project.Name</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="col-md-2 mb-3">
+            <label class="form-label">Sort by</label>
+            <InputSelect class="form-select" @bind-Value="query.SortBy">
+                <option value="uploadDate">Upload Date</option>
+                <option value="title">Title</option>
+                <option value="category">Category</option>
+                <option value="filesize">File Size</option>
+            </InputSelect>
+        </div>
+    </div>
+
+    <button class="btn btn-secondary mb-4" @onclick="LoadDocuments">Refresh</button>
+
+    @if (documents is null)
+    {
+        <p>Loading documents...</p>
+    }
+    else if (!documents.Any())
+    {
+        <p class="text-muted">No documents found. Upload your first document on the <a href="/documents/upload">upload page</a>.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Project</th>
+                        <th>Uploaded</th>
+                        <th>Size</th>
+                        <th>Tags</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var document in documents)
+                    {
+                        <tr>
+                            <td>@document.Title</td>
+                            <td>@document.Category</td>
+                            <td>@(document.Project?.Name ?? "Personal")</td>
+                            <td>@document.UploadDateUtc.ToLocalTime().ToString("g")</td>
+                            <td>@(document.FileSizeBytes / 1024) KB</td>
+                            <td>@document.Tags</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</DocumentLayout>
+
+@code {
+    private List<Document>? documents;
+    private List<Project> userProjects = new();
+    private IReadOnlyCollection<string> categories = Array.Empty<string>();
+    private DocumentQuery query = new() { SortBy = "uploadDate" };
+    private int currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var parsedId))
+            {
+                currentUserId = parsedId;
+            }
+        }
+
+        categories = ValidationService.AllowedCategories;
+
+        if (currentUserId > 0)
+        {
+            userProjects = await ProjectService.GetUserProjectsAsync(currentUserId);
+            await LoadDocuments();
+        }
+    }
+
+    private async Task LoadDocuments()
+    {
+        documents = (await DocumentService.GetUserDocumentsAsync(currentUserId, query)).ToList();
+    }
+}

@@ -1,0 +1,16 @@
+@namespace ContosoDashboard.Pages.Documents
+
+<div class="document-page-layout">
+    <div class="mb-4">
+        <h2>@Title</h2>
+    </div>
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Documents";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

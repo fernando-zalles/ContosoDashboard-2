@@ -16,6 +16,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaskComment> TaskComments { get; set; } = null!;
     public DbSet<Notification> Notifications { get; set; } = null!;
     public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
+    public DbSet<Document> Documents { get; set; } = null!;
+    public DbSet<DocumentShare> DocumentShares { get; set; } = null!;
     public DbSet<Announcement> Announcements { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -59,6 +61,45 @@ public class ApplicationDbContext : DbContext
 
         modelBuilder.Entity<Notification>()
             .HasIndex(n => new { n.UserId, n.IsRead });
+
+        modelBuilder.Entity<Document>()
+            .HasOne(d => d.UploadedBy)
+            .WithMany()
+            .HasForeignKey(d => d.UploadedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Document>()
+            .HasOne(d => d.Project)
+            .WithMany()
+            .HasForeignKey(d => d.ProjectId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Document>()
+            .HasMany(d => d.DocumentShares)
+            .WithOne(ds => ds.Document)
+            .HasForeignKey(ds => ds.DocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Document>()
+            .HasIndex(d => d.UploadedById);
+
+        modelBuilder.Entity<Document>()
+            .HasIndex(d => d.ProjectId);
+
+        modelBuilder.Entity<Document>()
+            .HasIndex(d => d.Category);
+
+        modelBuilder.Entity<DocumentShare>()
+            .HasOne(ds => ds.RecipientUser)
+            .WithMany()
+            .HasForeignKey(ds => ds.RecipientUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<DocumentShare>()
+            .HasOne(ds => ds.SharedByUser)
+            .WithMany()
+            .HasForeignKey(ds => ds.SharedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)

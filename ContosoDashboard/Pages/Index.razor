@@ -4,6 +4,7 @@
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize]
 @inject IDashboardService DashboardService
+@inject IDocumentService DocumentService
 @inject INotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -53,6 +54,18 @@
                 </div>
             </div>
         </div>
+
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Documents</h5>
+                        <p class="card-text display-4 text-success">@recentDocuments.Count</p>
+                        <p class="card-text text-muted">Last 5 uploads</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 
     @if (announcements != null && announcements.Any())
@@ -85,6 +98,12 @@
                 </a>
                 <a href="/projects" class="list-group-item list-group-item-action">
                     <i class="bi bi-folder"></i> View My Projects
+                </a>
+                <a href="/documents" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-earmark-text"></i> View My Documents
+                </a>
+                <a href="/documents/upload" class="list-group-item list-group-item-action">
+                    <i class="bi bi-upload"></i> Upload Document
                 </a>
                 <a href="/notifications" class="list-group-item list-group-item-action">
                     <i class="bi bi-bell"></i> View Notifications
@@ -124,6 +143,7 @@
     private DashboardSummary? summary;
     private List<Announcement>? announcements;
     private List<Notification>? recentNotifications;
+    private List<Document>? recentDocuments = new();
     private string userName = "User";
     private int currentUserId = 0;
 
@@ -146,6 +166,7 @@
             summary = await DashboardService.GetDashboardSummaryAsync(currentUserId);
             announcements = await DashboardService.GetActiveAnnouncementsAsync();
             recentNotifications = await NotificationService.GetUserNotificationsAsync(currentUserId);
+            recentDocuments = (await DocumentService.GetRecentDocumentsAsync(currentUserId, 5)).ToList();
         }
     }
 
